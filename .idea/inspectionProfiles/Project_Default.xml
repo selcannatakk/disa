@@ -1,0 +1,19 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="tensorflow_datasets" />
+          <option value="streamlit.main.streamlit_option_menu" />
+          <option value="dict.get" />
+          <option value="tracker.matching.cython_bbox" />
+          <option value="utils.log_helper" />
+          <option value="utils.load_helper" />
+          <option value="utils.bbox_helper" />
+          <option value="utils.*" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
