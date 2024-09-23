@@ -1,3 +1,4 @@
+{% load static %} 
 <!-- Spinner Start -->
 <div id="spinner"
      class="show w-100 vh-100 bg-white position-fixed translate-middle top-50 start-50  d-flex align-items-center justify-content-center">
@@ -25,14 +26,14 @@
     </div>
     <div class="container px-0">
         <nav class="navbar navbar-light bg-white navbar-expand-xl">
-            <a href="index.html" class="navbar-brand"><h1 class="text-primary display-6">Fruitables</h1></a>
+            <a href="{% url 'index' %}" class="navbar-brand"><h1 class="text-primary display-6">DISA</h1></a>
             <button class="navbar-toggler py-2 px-3" type="button" data-bs-toggle="collapse"
                     data-bs-target="#navbarCollapse">
                 <span class="fa fa-bars text-primary"></span>
             </button>
             <div class="collapse navbar-collapse bg-white" id="navbarCollapse">
                 <div class="navbar-nav mx-auto">
-                    <a href="index.html" class="nav-item nav-link active">Home</a>
+                    <a href="{% url 'index' %}" class="nav-item nav-link active">Home</a>
                     <a href="shop.html" class="nav-item nav-link">Shop</a>
                     <a href="shop-detail.html" class="nav-item nav-link">Shop Detail</a>
                     <div class="nav-item dropdown">
@@ -50,14 +51,27 @@
                     <button class="btn-search btn border border-secondary btn-md-square rounded-circle bg-white me-4"
                             data-bs-toggle="modal" data-bs-target="#searchModal"><i
                             class="fas fa-search text-primary"></i></button>
-                    <a href="#" class="position-relative me-4 my-auto">
+                    <a href="{% url 'cart_summary' %}" class="position-relative me-4 my-auto">
                         <i class="fa fa-shopping-bag fa-2x"></i>
                         <span class="position-absolute bg-secondary rounded-circle d-flex align-items-center justify-content-center text-dark px-1"
-                              style="top: -5px; left: 15px; height: 20px; min-width: 20px;">3</span>
+                              style="top: -5px; left: 15px; height: 20px; min-width: 20px;"  id="cart_quantity">{{cart|length}}</span>
                     </a>
-                    <a href="#" class="my-auto">
-                        <i class="fas fa-user fa-2x"></i>
-                    </a>
+                    {% if request.user.is_authenticated %}
+
+                        <a href="#" class="my-auto">
+                            <i class="fas fa-user fa-2x"></i>
+                        </a>
+                        <a class="btn btn-success" href="{ url 'logout' }" class="my-auto">
+                            Logout
+                        </a>
+                        {% else %}
+                        <a class="btn btn-success" href="{ url 'login' }">
+                            Login
+                        </a>
+                        <a class="btn btn-success ms-3" href="{ url 'register' }" >
+                            Register
+                        </a>
+                    {% endif %}
                 </div>
             </div>
         </nav>
