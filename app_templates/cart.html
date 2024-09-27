@@ -11,6 +11,7 @@
         <li class="breadcrumb-item"><a href="#">Pages</a></li>
         <li class="breadcrumb-item active text-white">Cart</li>
     </ol>
+
 </div>
 <!-- Single Page Header End -->
 
@@ -18,6 +19,15 @@
 <!-- Cart Page Start -->
 <div class="container-fluid py-5">
     <div class="container py-5">
+        <div id="update-notification" class="alert alert-success"
+             style="display: none; position; fixed; top:150px; right:50px; width:150px;">
+        </div>
+        <div id="delete-notification" class="alert alert-danger"
+             style="display: none; position; fixed; top:150px; right:50px; width:150px;">
+        </div>
+
+        {% if products %}
+
         <div class="table-responsive">
             <table class="table">
                 <thead>
@@ -32,7 +42,7 @@
                 </thead>
                 <tbody>
                 {% for product in products %}
-                <tr>
+                <tr id="product-{{ product.id }}">
 
                     <th scope="row">
                         <div class="d-flex align-items-center">
@@ -55,33 +65,33 @@
                                 </button>
                             </div>
                             {% for key, value in quantities.items %}
-                                {% if key == product.id|slugify %}
-                                <input type="text" class="form-control form-control-sm text-center border-0"
-                                       value="{{value.qty}}">
+                            {% if key == product.id|slugify %}
+                            <input type="text" class="form-control form-control-sm text-center border-0"
+                                   value="{{ value.qty }}">
 
-                                {% endif %}
+                            {% endif %}
 
                             {% endfor %}
 
 
                             <div class="input-group-btn">
                                 <button class="btn btn-sm btn-plus rounded-circle bg-light border btn-qty"
-                                        value="{{ product.id }}"
-                                        name="btn-plus">
+                                        value="{{ product.id }}" name="btn-plus">
                                     <i class="fa fa-plus"></i>
                                 </button>
                             </div>
                         </div>
                     </td>
                     <td>
-                        <p class="mb-0 mt-4" id="prod_total_price-{{product.id}}">
+                        <p class="mb-0 mt-4" id="prod_total_price-{{ product.id }}">
 
                             {% for key, value in prod_total_price.items %}
-                                {% if key == product.id|slugify %}
+                            {% if key == product.id|slugify %}
 
-                                    {{ value.price}}
+                            {{ value.new_price}}
 
-                                {% endif %}
+
+                            {% endif %}
 
                             {% endfor %}
                         </p>
@@ -89,7 +99,8 @@
 
                     </td>
                     <td>
-                        <button class="btn btn-md rounded-circle bg-light border mt-4">
+                        <button class="btn btn-md rounded-circle bg-light border mt-4 prod-del"
+                                value="{{ product.id }}">
                             <i class="fa fa-times text-danger"></i>
                         </button>
                     </td>
@@ -101,6 +112,10 @@
                 </tbody>
             </table>
         </div>
+        {% else %}
+        <h2>SEPETİNİZDE ÜRÜN BULUNMAMAKTATADIR: LÜTFEN SEPETİNİZE ÜRÜN EKLEYİNİZ.</h2>
+        {% endif %}
+        <h2 style="display: none;" id="no-product"></h2>
         <div class="mt-5">
             <input type="text" class="border-0 border-bottom rounded me-5 py-3 mb-4" placeholder="Coupon Code">
             <button class="btn border-secondary rounded-pill px-4 py-3 text-primary" type="button">Apply Coupon</button>
@@ -113,7 +128,7 @@
                         <h1 class="display-6 mb-4">Cart <span class="fw-normal">Total</span></h1>
                         <div class="d-flex justify-content-between mb-4">
                             <h5 class="mb-0 me-4">Subtotal:</h5>
-                            <p class="mb-0">$96.00</p>
+                            <p class="mb-0">$ {{ total_price }}</p>
                         </div>
                         <div class="d-flex justify-content-between">
                             <h5 class="mb-0 me-4">Shipping</h5>
@@ -125,7 +140,7 @@
                     </div>
                     <div class="py-4 mb-4 border-top border-bottom d-flex justify-content-between">
                         <h5 class="mb-0 ps-4 me-4">Total</h5>
-                        <p class="mb-0 pe-4">$99.00</p>
+                        <p class="mb-0 pe-4" id="total_price">$99.00</p>
                     </div>
                     <button class="btn border-secondary rounded-pill px-4 py-3 text-primary text-uppercase mb-4 ms-4"
                             type="button">Proceed Checkout
@@ -140,24 +155,78 @@
 
 {% block extrajs %}
 <script>
-    $(".btn-qty").on("click", function(e) {
-        e.preventDefault();
-        var product_id = $(this).val();
-        var btn_qty = $(this).attr("name");
-
-        $.ajax({
-            method: "POST",
-            url: "{% url 'update_to_cart' %}",
-            data: {
-                "product_id": product_id,
-                "btn_qty": btn_qty,
-                csrfmiddlewaretoken: '{{ csrf_token }}'
-            },
-            success: function(data) {
-                $("prod_total_price-"+product.id).html(data.product_total_price);
+    $(document).ready(function() {
+        // Tüm ürünler için butonları başlangıçta ayarla
+        $(".btn-qty").each(function() {
+            var qty_input = $(this).closest('tr').find("input[type='text']").val(); // Her ürün için doğru input'u al
+            if (qty_input == 1) {
+                $(this).closest('tr').find(".btn-minus").attr("disabled", true);
+            } else {
+                $(this).closest('tr').find(".btn-minus").attr("disabled", false);
             }
-        })
-    })
+        });
+
+        $(".btn-qty").on("click", function(e) {
+            e.preventDefault();
+            var product_id = $(this).val();
+            var qty_input = $(this).closest('tr').find("input[type='text']").val(); // Her ürün için doğru input'u al
+            if (qty_input == 1) {
+                $(this).closest('tr').find(".btn-minus").attr("disabled", true);
+            } else {
+                $(this).closest('tr').find(".btn-minus").attr("disabled", false);
+            }
+            var btn_qty = $(this).attr("name");
+
+            $.ajax({
+                method: "POST",
+                url: "{% url 'update_to_cart' %}",
+                data: {
+                    "product_id": product_id,
+                    "btn_qty": btn_qty,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function(data) {
+                    $("#prod_total_price-" + product_id).html(data.product_total_price + " $");
+                    $("#total_price").html("$ " + data.total_price); // Toplam fiyatın güncellenmesi
+                    $('#update-notification').text(data.message).fadeIn().delay(1000).fadeOut();
+                },
+                error: function(xhr, status, error) {
+                    console.log("Hata: " + error); // Hata mesajını konsola yazdır
+                }
+            });
+        });
+
+        $(".prod-del").on("click", function(e) {
+            e.preventDefault();
+            var product_id = $(this).val();
+
+            $.ajax({
+                method: "POST",
+                url: "{% url 'delete_to_cart' %}",
+                data: {
+                    "product_id": product_id,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function(data) {
+                    $("#cart_quantity").html(data.cart_quantity);
+                    $("#product-" + product_id).remove(); // Ürünü kaldır
+                    $("#total_price").html("$ " + data.total_price); // Toplam fiyatın güncellenmesi
+                    $('#delete-notification').text(data.message).fadeIn().delay(1000).fadeOut();
+                    $('#delete-notification').text(data.message).fadeIn().delay(1000).fadeOut();
+
+                    if(data.cart_quantity == 0){
+                        $("#no-product").css("display","block");
+                        $("#no-product").html("SEPETİNİZDE ÜRÜN BULUNMAMAKTATADIR: LÜTFEN SEPETİNİZE ÜRÜN EKLEYİNİZ.");
+                        $(".table-responsive").css("display","none");
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log("Hata: " + error); // Hata mesajını konsola yazdır
+                }
+            });
+        });
+    });
 </script>
+
 
 {% endblock extrajs %}

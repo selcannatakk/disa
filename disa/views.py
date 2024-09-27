@@ -6,16 +6,25 @@ from django.http import HttpResponseRedirect
 from .models import *
 from .cart import Cart
 
+
 from django.http.response import JsonResponse
 
 
 def index(request):
-    products = Product.objects.all()
     categories = Category.objects.all()
+    filter_id = request.GET.get('filter', 'all')
+
+    if filter_id == 'all':
+        products = Product.objects.all()
+    else:
+        products = Product.objects.filter(category__id=filter_id)
+
     context = {
         "products": products,
         "categories": categories,
     }
+
+
     return render(request, "index.html", context)
 
 
@@ -33,9 +42,10 @@ def cart_summary(request):
     cart = Cart(request)
 
     products = cart.get_prods()
-    # products = Product.objects.all()
     prod_total_price = cart.prod_total_price()
-    quantities = request.session.get("cart", {})
+    total_price = cart.total_price()
+    quantities = request.session.get("cart")
+
 
 
     print(products)
@@ -45,6 +55,7 @@ def cart_summary(request):
         "products": products,
         "quantities": quantities,
         "prod_total_price": prod_total_price,
+        "total_price": total_price,
 
     }
     return render(request, "cart.html", context)
@@ -66,7 +77,8 @@ def add_to_cart(request):
         print("cart number")
 
         context = {
-            "cart_quantity": cart_quantity
+            "cart_quantity": cart_quantity,
+            "message": f"{product.name} Sepetinize eklendi.",
 
         }
 
@@ -82,17 +94,41 @@ def update_to_cart(request):
         product = Product.objects.get(id=product_id)
 
         cart.update(product=product, btn_qty=btn_qty, qty=1)
+        total_price = cart.total_price()
 
-        for key, value in request.session.get["cart"].items():
+        for key, value in request.session.get("cart").items():
             if key == product_id:
-                product_total_price = value["price"]
+                product_total_price = value["new_price"]
 
-    return JsonResponse({"product_total_price": product_total_price})
+    context = {
+        "product_total_price": product_total_price,
+        "total_price":total_price,
+        "message": "Sepetiniz güncellendi.",
+
+    }
+
+    return JsonResponse(context)
 
 
 def delete_to_cart(request):
-    pass
+    
+    cart = Cart(request)
 
+    if request.method == "POST":
+        product_id = request.POST.get("product_id")
+        product = Product.objects.get(id=product_id)
+        cart.delete(product=product)
+        cart_quantity = cart.__len__()
+        total_price = cart.total_price()
+
+    context = {
+        "cart_quantity": cart_quantity,
+        "total_price":total_price,
+        "message": f"{product.name} Sepetinizden kaldırıldı.",
+
+    }
+
+    return JsonResponse(context)
 
 def user_login(request):
     if request.method == "POST":
